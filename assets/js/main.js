@@ -1,215 +1,199 @@
 
+(function() {
+  "use strict";
 
-(function($) {
+  /**
+   * Apply .scrolled class to the body as the page is scrolled down
+   */
+  function toggleScrolled() {
+    const selectBody = document.querySelector('body');
+    const selectHeader = document.querySelector('#header');
+    if (!selectHeader.classList.contains('scroll-up-sticky') && !selectHeader.classList.contains('sticky-top') && !selectHeader.classList.contains('fixed-top')) return;
+    window.scrollY > 100 ? selectBody.classList.add('scrolled') : selectBody.classList.remove('scrolled');
+  }
 
-	var	$window = $(window),
-		$body = $('body'),
-		$header = $('#header'),
-		$all = $body.add($header);
+  document.addEventListener('scroll', toggleScrolled);
+  window.addEventListener('load', toggleScrolled);
 
-	// Breakpoints.
-		breakpoints({
-			xxlarge: [ '1681px',  '1920px' ],
-			xlarge:  [ '1281px',  '1680px' ],
-			large:   [ '1001px',  '1280px' ],
-			medium:  [ '737px',   '1000px' ],
-			small:   [ '481px',   '736px'  ],
-			xsmall:  [ null,      '480px'  ]
-		});
+  /**
+   * Mobile nav toggle
+   */
+  const mobileNavToggleBtn = document.querySelector('.mobile-nav-toggle');
 
-	// Play initial animations on page load.
-		$window.on('load', function() {
-			setTimeout(function() {
-				$body.removeClass('is-preload');
-			}, 100);
-		});
+  function mobileNavToogle() {
+    document.querySelector('body').classList.toggle('mobile-nav-active');
+    mobileNavToggleBtn.classList.toggle('bi-list');
+    mobileNavToggleBtn.classList.toggle('bi-x');
+  }
+  mobileNavToggleBtn.addEventListener('click', mobileNavToogle);
 
-	// Touch mode.
-		if (browser.mobile)
-			$body.addClass('is-touch');
-		else {
+  /**
+   * Hide mobile nav on same-page/hash links
+   */
+  document.querySelectorAll('#navmenu a').forEach(navmenu => {
+    navmenu.addEventListener('click', () => {
+      if (document.querySelector('.mobile-nav-active')) {
+        mobileNavToogle();
+      }
+    });
 
-			breakpoints.on('<=small', function() {
-				$body.addClass('is-touch');
-			});
+  });
 
-			breakpoints.on('>small', function() {
-				$body.removeClass('is-touch');
-			});
+  /**
+   * Toggle mobile nav dropdowns
+   */
+  document.querySelectorAll('.navmenu .toggle-dropdown').forEach(navmenu => {
+    navmenu.addEventListener('click', function(e) {
+      e.preventDefault();
+      this.parentNode.classList.toggle('active');
+      this.parentNode.nextElementSibling.classList.toggle('dropdown-active');
+      e.stopImmediatePropagation();
+    });
+  });
 
-		}
+  /**
+   * Preloader
+   */
+  const preloader = document.querySelector('#preloader');
+  if (preloader) {
+    window.addEventListener('load', () => {
+      preloader.remove();
+    });
+  }
 
-	// Fix: IE flexbox fix.
-		if (browser.name == 'ie') {
+  /**
+   * Scroll top button
+   */
+  let scrollTop = document.querySelector('.scroll-top');
 
-			var $main = $('.main.fullscreen'),
-				IEResizeTimeout;
+  function toggleScrollTop() {
+    if (scrollTop) {
+      window.scrollY > 100 ? scrollTop.classList.add('active') : scrollTop.classList.remove('active');
+    }
+  }
+  scrollTop.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
 
-			$window
-				.on('resize.ie-flexbox-fix', function() {
+  window.addEventListener('load', toggleScrollTop);
+  document.addEventListener('scroll', toggleScrollTop);
 
-					clearTimeout(IEResizeTimeout);
+  /**
+   * Animation on scroll function and init
+   */
+  function aosInit() {
+    AOS.init({
+      duration: 600,
+      easing: 'ease-in-out',
+      once: true,
+      mirror: false
+    });
+  }
+  window.addEventListener('load', aosInit);
 
-					IEResizeTimeout = setTimeout(function() {
+  /**
+   * Init swiper sliders
+   */
+  function initSwiper() {
+    document.querySelectorAll(".init-swiper").forEach(function(swiperElement) {
+      let config = JSON.parse(
+        swiperElement.querySelector(".swiper-config").innerHTML.trim()
+      );
 
-						var wh = $window.height();
+      if (swiperElement.classList.contains("swiper-tab")) {
+        initSwiperWithCustomPagination(swiperElement, config);
+      } else {
+        new Swiper(swiperElement, config);
+      }
+    });
+  }
 
-						$main.each(function() {
+  window.addEventListener("load", initSwiper);
 
-							var $this = $(this);
+  /**
+   * Initiate glightbox
+   */
+  const glightbox = GLightbox({
+    selector: '.glightbox'
+  });
 
-							$this.css('height', '');
+  /**
+   * Init isotope layout and filters
+   */
+  document.querySelectorAll('.isotope-layout').forEach(function(isotopeItem) {
+    let layout = isotopeItem.getAttribute('data-layout') ?? 'masonry';
+    let filter = isotopeItem.getAttribute('data-default-filter') ?? '*';
+    let sort = isotopeItem.getAttribute('data-sort') ?? 'original-order';
 
-							if ($this.height() <= wh)
-								$this.css('height', (wh - 50) + 'px');
+    let initIsotope;
+    imagesLoaded(isotopeItem.querySelector('.isotope-container'), function() {
+      initIsotope = new Isotope(isotopeItem.querySelector('.isotope-container'), {
+        itemSelector: '.isotope-item',
+        layoutMode: layout,
+        filter: filter,
+        sortBy: sort
+      });
+    });
 
-						});
+    isotopeItem.querySelectorAll('.isotope-filters li').forEach(function(filters) {
+      filters.addEventListener('click', function() {
+        isotopeItem.querySelector('.isotope-filters .filter-active').classList.remove('filter-active');
+        this.classList.add('filter-active');
+        initIsotope.arrange({
+          filter: this.getAttribute('data-filter')
+        });
+        if (typeof aosInit === 'function') {
+          aosInit();
+        }
+      }, false);
+    });
 
-					});
+  });
 
-				})
-				.triggerHandler('resize.ie-flexbox-fix');
 
-		}
 
-	// Gallery.
-		$window.on('load', function() {
+  /**
+   * Correct scrolling position upon page load for URLs containing hash links.
+   */
+  window.addEventListener('load', function(e) {
+    if (window.location.hash) {
+      if (document.querySelector(window.location.hash)) {
+        setTimeout(() => {
+          let section = document.querySelector(window.location.hash);
+          let scrollMarginTop = getComputedStyle(section).scrollMarginTop;
+          window.scrollTo({
+            top: section.offsetTop - parseInt(scrollMarginTop),
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+    }
+  });
 
-			var $gallery = $('.gallery');
+  /**
+   * Navmenu Scrollspy
+   */
+  let navmenulinks = document.querySelectorAll('.navmenu a');
 
-			$gallery.poptrox({
-				baseZIndex: 10001,
-				useBodyOverflow: false,
-				usePopupEasyClose: false,
-				overlayColor: '#1f2328',
-				overlayOpacity: 0.65,
-				usePopupDefaultStyling: false,
-				usePopupCaption: true,
-				popupLoaderText: '',
-				windowMargin: 50,
-				usePopupNav: true
-			});
+  function navmenuScrollspy() {
+    navmenulinks.forEach(navmenulink => {
+      if (!navmenulink.hash) return;
+      let section = document.querySelector(navmenulink.hash);
+      if (!section) return;
+      let position = window.scrollY + 200;
+      if (position >= section.offsetTop && position <= (section.offsetTop + section.offsetHeight)) {
+        document.querySelectorAll('.navmenu a.active').forEach(link => link.classList.remove('active'));
+        navmenulink.classList.add('active');
+      } else {
+        navmenulink.classList.remove('active');
+      }
+    })
+  }
+  window.addEventListener('load', navmenuScrollspy);
+  document.addEventListener('scroll', navmenuScrollspy);
 
-			// Hack: Adjust margins when 'small' activates.
-				breakpoints.on('>small', function() {
-					$gallery.each(function() {
-						$(this)[0]._poptrox.windowMargin = 50;
-					});
-				});
-
-				breakpoints.on('<=small', function() {
-					$gallery.each(function() {
-						$(this)[0]._poptrox.windowMargin = 5;
-					});
-				});
-
-		});
-
-	// Section transitions.
-		if (browser.canUse('transition')) {
-
-			var on = function() {
-
-				// Galleries.
-					$('.gallery')
-						.scrollex({
-							top:		'30vh',
-							bottom:		'30vh',
-							delay:		50,
-							initialize:	function() { $(this).addClass('inactive'); },
-							terminate:	function() { $(this).removeClass('inactive'); },
-							enter:		function() { $(this).removeClass('inactive'); },
-							leave:		function() { $(this).addClass('inactive'); }
-						});
-
-				// Generic sections.
-					$('.main.style1')
-						.scrollex({
-							mode:		'middle',
-							delay:		100,
-							initialize:	function() { $(this).addClass('inactive'); },
-							terminate:	function() { $(this).removeClass('inactive'); },
-							enter:		function() { $(this).removeClass('inactive'); },
-							leave:		function() { $(this).addClass('inactive'); }
-						});
-
-					$('.main.style2')
-						.scrollex({
-							mode:		'middle',
-							delay:		100,
-							initialize:	function() { $(this).addClass('inactive'); },
-							terminate:	function() { $(this).removeClass('inactive'); },
-							enter:		function() { $(this).removeClass('inactive'); },
-							leave:		function() { $(this).addClass('inactive'); }
-						});
-
-				// Contact.
-					$('#contact')
-						.scrollex({
-							top:		'50%',
-							delay:		50,
-							initialize:	function() { $(this).addClass('inactive'); },
-							terminate:	function() { $(this).removeClass('inactive'); },
-							enter:		function() { $(this).removeClass('inactive'); },
-							leave:		function() { $(this).addClass('inactive'); }
-						});
-
-			};
-
-			var off = function() {
-
-				// Galleries.
-					$('.gallery')
-						.unscrollex();
-
-				// Generic sections.
-					$('.main.style1')
-						.unscrollex();
-
-					$('.main.style2')
-						.unscrollex();
-
-				// Contact.
-					$('#contact')
-						.unscrollex();
-
-			};
-
-			breakpoints.on('<=small', off);
-			breakpoints.on('>small', on);
-
-		}
-
-	// Events.
-		var resizeTimeout, resizeScrollTimeout;
-
-		$window
-			.on('resize', function() {
-
-				// Disable animations/transitions.
-					$body.addClass('is-resizing');
-
-				clearTimeout(resizeTimeout);
-
-				resizeTimeout = setTimeout(function() {
-
-					// Update scrolly links.
-						$('a[href^="#"]').scrolly({
-							speed: 1500,
-							offset: $header.outerHeight() - 1
-						});
-
-					// Re-enable animations/transitions.
-						setTimeout(function() {
-							$body.removeClass('is-resizing');
-							$window.trigger('scroll');
-						}, 0);
-
-				}, 100);
-
-			})
-			.on('load', function() {
-				$window.trigger('resize');
-			});
-
-})(jQuery);
+})();
