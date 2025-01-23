@@ -790,7 +790,37 @@ section,
 }
 
 
+/*--------------------------------------------------------------
+# Videos Section
+--------------------------------------------------------------*/
 
+        /* Styling the video section */
+        .videos-section {
+          padding: 40px;
+          text-align: center;
+          background-color: #f9f9f9;
+      }
+
+      .videos-container {
+          display: flex;
+          flex-wrap: wrap; /* Allows wrapping for smaller screens */
+          justify-content: center; /* Centers content */
+          gap: 20px; /* Adds space between videos */
+      }
+
+      .team-video {
+          width: 48%; /* Each video takes 48% of the row on large screens */
+          height: 1138px; /* Fixed height for the videos */
+          max-width: 640px; /* Prevents videos from getting too wide */
+      }
+
+      /* Responsive design for smaller screens */
+      @media (max-width: 768px) {
+          .team-video {
+              width: 100%; /* Each video takes the full width on smaller screens */
+              height: 768px; /* Maintain fixed height on small screens */
+          }
+      }
 /*--------------------------------------------------------------
 # Bulletin Board Section
 --------------------------------------------------------------*/
